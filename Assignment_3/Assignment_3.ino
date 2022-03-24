@@ -198,3 +198,120 @@ void Task1(void *pvParameters)  // This is a task.
   digitalWrite(GreenLED, LOW);
   }
 }
+
+void Task2(void *pvParameters)  // This is a task.
+{
+  (void) pvParameters;
+
+
+  for (;;) 
+  {
+ButtonState=digitalRead(Button); //Tells when Button is pressed
+  }
+}
+
+void Task3(void *pvParameters)  // This is a task.
+{
+  (void) pvParameters;
+
+
+  for (;;) 
+  {
+  SquarewaveState=digitalRead(squarewavein); // Saving the initial state of the square wave.
+  LastSquarewaveState=SquarewaveState;
+  while (SquarewaveState==LastSquarewaveState){
+    SquarewaveState = digitalRead(squarewavein); // We read until the state changes
+  }
+  if (SquarewaveState != LastSquarewaveState){
+    SquarewaveStart=micros(); // Save this start time.
+    LastSquarewaveState=SquarewaveState; // Save start state.
+    while (SquarewaveState==LastSquarewaveState){ //Read again until state changes again
+      SquarewaveState = digitalRead(squarewavein);  
+    }
+      SquarewaveEnd = micros(); // Save the end time.
+      Frequency = 1000000/(2*(SquarewaveEnd-SquarewaveStart)); // Calculate frequency     
+  }
+  }
+}
+
+void Task4(void *pvParameters)  // This is a task.
+{
+  (void) pvParameters;
+
+
+  for (;;) 
+  {
+AnalogueRead=analogRead(AnalogueInput);
+  }
+}
+
+void Task5(void *pvParameters)  // This is a task.
+{
+  (void) pvParameters;
+
+
+  for (;;) 
+  {
+  Prev4AnaInput = Prev3AnaInput; //4th last input
+  Prev3AnaInput = Prev2AnaInput; //3rd last input
+  Prev2AnaInput = Prev1AnaInput; //2nd last input
+  Prev1AnaInput = AnalogueRead; //Last input
+  AverageAnaInput = (Prev4AnaInput+Prev3AnaInput+Prev2AnaInput+Prev1AnaInput)/4; // Mean average.
+  }
+}
+
+void Task6(void *pvParameters)  // This is a task.
+{
+  (void) pvParameters;
+
+
+  for (;;) 
+  {
+  for (int i=1; i<=1000; i++){
+    __asm__ __volatile__ ("nop");
+  }
+  }
+}
+
+void Task7(void *pvParameters)  // This is a task.
+{
+  (void) pvParameters;
+
+
+  for (;;) 
+  {
+  if (AverageAnaInput > half_of_maximum_range_for_analogue_input){
+    error_code = 1;
+  } else {
+    error_code = 0;
+  }
+  }
+}
+
+void Task8(void *pvParameters)  // This is a task.
+{
+  (void) pvParameters;
+
+
+  for (;;) 
+  {
+  if (error_code==1){
+    digitalWrite(RedLED, HIGH);
+  } else {
+    digitalWrite(RedLED, LOW);
+  }
+  }
+}
+
+void Task9(void *pvParameters)  // This is a task.
+{
+  (void) pvParameters;
+
+
+  for (;;) 
+  {
+  Serial.printf( "Button State is %d, ", ButtonState);
+  Serial.printf( "Frequency is %d, ", Frequency);
+  Serial.printf( "Average Analogue input is %d. \n", AverageAnaInput);
+  }
+}
