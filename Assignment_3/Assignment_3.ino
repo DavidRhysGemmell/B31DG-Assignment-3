@@ -8,15 +8,9 @@
 // Task 7: 3Hz. Produces an error code if the current analogue input is greater than half of the maximum range of the analogue input.
 // Task 8: 3Hz. Visulaises the error code with an LED.
 // Task 9: 0.2Hz. Prints to the serial port: Button state, Frequency of square wave, average analogue input.
-#if CONFIG_FREERTOS_UNICORE
-#define ARDUINO_RUNNING_CORE 0
-#else
-#define ARDUINO_RUNNING_CORE 1
-#endif
 
-struct GlobalVariables{
-  
-}.GVariables;
+
+
 //Task1 setup//
 #define GreenLED 27//insert green LED pin
 ///////////////
@@ -88,7 +82,7 @@ void setup() {
     ,  NULL
     ,  2  // Priority, with 3 (configMAX_PRIORITIES - 1) being the highest, and 0 being the lowest.
     ,  NULL 
-    ,  ARDUINO_RUNNING_CORE);
+    ,  0);
   //////////////
 
   //Task2 Setup//
@@ -100,7 +94,7 @@ void setup() {
     ,  NULL
     ,  2  // Priority, with 3 (configMAX_PRIORITIES - 1) being the highest, and 0 being the lowest.
     ,  NULL 
-    ,  ARDUINO_RUNNING_CORE);
+    ,  0);
   //////////////
 
   //Task3 Setup//
@@ -112,7 +106,7 @@ void setup() {
     ,  NULL
     ,  2  // Priority, with 3 (configMAX_PRIORITIES - 1) being the highest, and 0 being the lowest.
     ,  NULL 
-    ,  ARDUINO_RUNNING_CORE);
+    ,  0);
   //////////////
 
   //Task4 Setup//
@@ -121,22 +115,22 @@ void setup() {
      xTaskCreatePinnedToCore(
     Task4
     ,  "Task4"   // A name just for humans
-    ,  1024  // This stack size can be checked & adjusted by reading the Stack Highwater
+    ,  4096  // This stack size can be checked & adjusted by reading the Stack Highwater
     ,  NULL
     ,  2  // Priority, with 3 (configMAX_PRIORITIES - 1) being the highest, and 0 being the lowest.
     ,  NULL 
-    ,  ARDUINO_RUNNING_CORE);
+    ,  0);
   //////////////
 
   //Task5 Setup//
     xTaskCreatePinnedToCore(
     Task5
     ,  "Task5"   // A name just for humans
-    ,  1024  // This stack size can be checked & adjusted by reading the Stack Highwater
+    ,  4096  // This stack size can be checked & adjusted by reading the Stack Highwater
     ,  NULL
     ,  2  // Priority, with 3 (configMAX_PRIORITIES - 1) being the highest, and 0 being the lowest.
     ,  NULL 
-    ,  ARDUINO_RUNNING_CORE);
+    ,  0);
   //////////////
 
   //Task6 Setup//
@@ -147,7 +141,7 @@ void setup() {
     ,  NULL
     ,  2  // Priority, with 3 (configMAX_PRIORITIES - 1) being the highest, and 0 being the lowest.
     ,  NULL 
-    ,  ARDUINO_RUNNING_CORE);
+    ,  0);
   //////////////
  
   //Task7 Setup//
@@ -158,7 +152,7 @@ void setup() {
     ,  NULL
     ,  2  // Priority, with 3 (configMAX_PRIORITIES - 1) being the highest, and 0 being the lowest.
     ,  NULL 
-    ,  ARDUINO_RUNNING_CORE);
+    ,  0);
   //////////////
 
   //Task8 Setup//
@@ -170,7 +164,7 @@ void setup() {
     ,  NULL
     ,  2  // Priority, with 3 (configMAX_PRIORITIES - 1) being the highest, and 0 being the lowest.
     ,  NULL 
-    ,  ARDUINO_RUNNING_CORE);
+    ,  0);
   //////////////
 
   //Task9 Setup//
@@ -181,7 +175,7 @@ void setup() {
     ,  NULL
     ,  2  // Priority, with 3 (configMAX_PRIORITIES - 1) being the highest, and 0 being the lowest.
     ,  NULL 
-    ,  ARDUINO_RUNNING_CORE);
+    ,  0);
   ////////////// 
 }
 
@@ -211,6 +205,7 @@ void Task2(void *pvParameters)  // This is a task.
   for (;;) 
   {
 ButtonState=digitalRead(Button); //Tells when Button is pressed
+vTaskDelay(200);
   }
 }
 
@@ -221,21 +216,24 @@ void Task3(void *pvParameters)  // This is a task.
 
   for (;;) 
   {
-  SquarewaveState=digitalRead(squarewavein); // Saving the initial state of the square wave.
+    Frequency=0;
+    SquarewaveState=digitalRead(squarewavein); // Saving the initial state of the square wave.
   LastSquarewaveState=SquarewaveState;
-  while (SquarewaveState==LastSquarewaveState){
+ SquarewaveStart=micros();
+ while (micros()-SquarewaveStart<=100000){
+    while (SquarewaveState==LastSquarewaveState){
     SquarewaveState = digitalRead(squarewavein); // We read until the state changes
   }
-  if (SquarewaveState != LastSquarewaveState){
-    SquarewaveStart=micros(); // Save this start time.
-    LastSquarewaveState=SquarewaveState; // Save start state.
-    while (SquarewaveState==LastSquarewaveState){ //Read again until state changes again
-      SquarewaveState = digitalRead(squarewavein);  
-    }
-      SquarewaveEnd = micros(); // Save the end time.
-      Frequency = 1000000/(2*(SquarewaveEnd-SquarewaveStart)); // Calculate frequency     
+  LastSquarewaveState=SquarewaveState;
+  Frequency=Frequency+1; //Once a change is registered, we add one to the counter, this is up and down so will double our frequency so will need to half it at the end.
+      while (SquarewaveState==LastSquarewaveState){
+    SquarewaveState = digitalRead(squarewavein); // We read until the state changes
   }
-  }
+  LastSquarewaveState=SquarewaveState;
+ }
+ Frequency=Frequency*10;
+ vTaskDelay(900);
+}
 }
 
 void Task4(void *pvParameters)  // This is a task.
@@ -245,7 +243,10 @@ void Task4(void *pvParameters)  // This is a task.
 
   for (;;) 
   {
+    digitalWrite(Task4OutputPin, HIGH);
 AnalogueRead=analogRead(AnalogueInput);
+vTaskDelay(41);
+digitalWrite(Task4OutputPin, LOW);
   }
 }
 
@@ -261,6 +262,7 @@ void Task5(void *pvParameters)  // This is a task.
   Prev2AnaInput = Prev1AnaInput; //2nd last input
   Prev1AnaInput = AnalogueRead; //Last input
   AverageAnaInput = (Prev4AnaInput+Prev3AnaInput+Prev2AnaInput+Prev1AnaInput)/4; // Mean average.
+  vTaskDelay(41);
   }
 }
 
@@ -274,6 +276,7 @@ void Task6(void *pvParameters)  // This is a task.
   for (int i=1; i<=1000; i++){
     __asm__ __volatile__ ("nop");
   }
+  vTaskDelay(100);
   }
 }
 
@@ -289,6 +292,7 @@ void Task7(void *pvParameters)  // This is a task.
   } else {
     error_code = 0;
   }
+  vTaskDelay(333);
   }
 }
 
@@ -304,6 +308,7 @@ void Task8(void *pvParameters)  // This is a task.
   } else {
     digitalWrite(RedLED, LOW);
   }
+  vTaskDelay(333);
   }
 }
 
@@ -317,5 +322,6 @@ void Task9(void *pvParameters)  // This is a task.
   Serial.printf( "Button State is %d, ", ButtonState);
   Serial.printf( "Frequency is %d, ", Frequency);
   Serial.printf( "Average Analogue input is %d. \n", AverageAnaInput);
+  vTaskDelay(5000);
   }
 }
