@@ -24,6 +24,8 @@ int ButtonState=0;
 #define squarewavein 19 //Square wave input pin number.
 unsigned long SquarewaveStart=0;
 unsigned long SquarewaveEnd=0;
+unsigned long Task4StartTime = 0;
+unsigned long Task4Length = 0;
 unsigned long Frequency = 0;
 int SquarewaveState = 0;
 int LastSquarewaveState = 0;
@@ -171,7 +173,7 @@ void setup() {
     xTaskCreatePinnedToCore(
     Task9
     ,  "Task9"   // A name just for humans
-    ,  1024  // This stack size can be checked & adjusted by reading the Stack Highwater
+    ,  4096  // This stack size can be checked & adjusted by reading the Stack Highwater
     ,  NULL
     ,  2  // Priority, with 3 (configMAX_PRIORITIES - 1) being the highest, and 0 being the lowest.
     ,  NULL 
@@ -216,23 +218,28 @@ void Task3(void *pvParameters)  // This is a task.
 
   for (;;) 
   {
-    Frequency=0;
-    SquarewaveState=digitalRead(squarewavein); // Saving the initial state of the square wave.
+  SquarewaveState=digitalRead(squarewavein); // Saving the initial state of the square wave.
   LastSquarewaveState=SquarewaveState;
- SquarewaveStart=micros();
- while (micros()-SquarewaveStart<=100000){
-    while (SquarewaveState==LastSquarewaveState){
+  Task4StartTime=micros();
+  
+  while (SquarewaveState==LastSquarewaveState && micros()-Task4StartTime<4000){
     SquarewaveState = digitalRead(squarewavein); // We read until the state changes
   }
-  LastSquarewaveState=SquarewaveState;
-  Frequency=Frequency+1; //Once a change is registered, we add one to the counter, this is up and down so will double our frequency so will need to half it at the end.
-      while (SquarewaveState==LastSquarewaveState){
-    SquarewaveState = digitalRead(squarewavein); // We read until the state changes
+  
+    SquarewaveStart=micros(); // Save this start time.
+    LastSquarewaveState=SquarewaveState; // Save start state.
+    while (SquarewaveState==LastSquarewaveState && micros()-Task4StartTime<4000){ //Read again until state changes again
+      SquarewaveState = digitalRead(squarewavein);  
+    }
+      SquarewaveEnd = micros(); // Save the end time.
+      if (micros()-Task4StartTime>=4000){
+        Frequency=0; //frequency less than 500HZ
+        Serial.printf("No square wave input detected, ");
+      } else {
+      Frequency = 1000000/(2*(SquarewaveEnd-SquarewaveStart)); // Calculate frequency     
   }
-  LastSquarewaveState=SquarewaveState;
- }
- Frequency=Frequency*10;
- vTaskDelay(900);
+  Task4Length=(micros()-Task4StartTime-2)/1000; //Task4length in millis
+ vTaskDelay(1000-Task4Length); //Suitable delay
 }
 }
 
