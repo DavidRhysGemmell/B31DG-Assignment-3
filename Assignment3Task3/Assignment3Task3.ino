@@ -54,12 +54,12 @@ void Task3(void *pvParameters)  // This is a task.
       SquarewaveEnd = micros(); // Save the end time.
       if (micros()-Task4StartTime>=4000){
         Frequency=0; //frequency less than 500HZ
+        Serial.printf("No square wave input detected, ");
       } else {
       Frequency = 1000000/(2*(SquarewaveEnd-SquarewaveStart)); // Calculate frequency     
   }
-  Task4Length=(micros()-Task4StartTime)/1000; //Task4length in millis
+  Task4Length=(micros()-Task4StartTime-2)/1000; //Task4length in millis
  Serial.printf( "Frequency is %d, ", Frequency);
- Serial.printf( "Task4Length is %d, ", Task4Length);
  Serial.println();
  vTaskDelay(1000-Task4Length); //Suitable delay
 }
