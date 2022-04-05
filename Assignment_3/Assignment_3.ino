@@ -14,9 +14,12 @@
 #define ARDUINO_RUNNING_CORE 1
 #endif
 
+struct GlobalVariables{
+  
+}.GVariables;
 //Task1 setup//
 #define GreenLED 27//insert green LED pin
-//////////////I
+///////////////
 
 //Task2//
 #define Button 13 //insert Button pin
@@ -79,9 +82,9 @@ void setup() {
   //Task1 Setup//
   pinMode(GreenLED, OUTPUT);
     xTaskCreatePinnedToCore(
-    TaskBlink
+    Task1
     ,  "Task1"   // A name just for humans
-    ,  1024  // This stack size can be checked & adjusted by reading the Stack Highwater
+    ,  512  // This stack size can be checked & adjusted by reading the Stack Highwater
     ,  NULL
     ,  2  // Priority, with 3 (configMAX_PRIORITIES - 1) being the highest, and 0 being the lowest.
     ,  NULL 
@@ -91,7 +94,7 @@ void setup() {
   //Task2 Setup//
    pinMode(Button, INPUT);
      xTaskCreatePinnedToCore(
-    TaskBlink
+    Task2
     ,  "Task2"   // A name just for humans
     ,  1024  // This stack size can be checked & adjusted by reading the Stack Highwater
     ,  NULL
@@ -103,7 +106,7 @@ void setup() {
   //Task3 Setup//
    pinMode(squarewavein, INPUT);
      xTaskCreatePinnedToCore(
-    TaskBlink
+    Task3
     ,  "Task3"   // A name just for humans
     ,  1024  // This stack size can be checked & adjusted by reading the Stack Highwater
     ,  NULL
@@ -116,7 +119,7 @@ void setup() {
    pinMode(AnalogueInput, INPUT);
    pinMode(Task4OutputPin, OUTPUT);
      xTaskCreatePinnedToCore(
-    TaskBlink
+    Task4
     ,  "Task4"   // A name just for humans
     ,  1024  // This stack size can be checked & adjusted by reading the Stack Highwater
     ,  NULL
@@ -127,7 +130,7 @@ void setup() {
 
   //Task5 Setup//
     xTaskCreatePinnedToCore(
-    TaskBlink
+    Task5
     ,  "Task5"   // A name just for humans
     ,  1024  // This stack size can be checked & adjusted by reading the Stack Highwater
     ,  NULL
@@ -138,7 +141,7 @@ void setup() {
 
   //Task6 Setup//
     xTaskCreatePinnedToCore(
-    TaskBlink
+    Task6
     ,  "Task6"   // A name just for humans
     ,  1024  // This stack size can be checked & adjusted by reading the Stack Highwater
     ,  NULL
@@ -149,7 +152,7 @@ void setup() {
  
   //Task7 Setup//
     xTaskCreatePinnedToCore(
-    TaskBlink
+    Task7
     ,  "Task7"   // A name just for humans
     ,  1024  // This stack size can be checked & adjusted by reading the Stack Highwater
     ,  NULL
@@ -161,7 +164,7 @@ void setup() {
   //Task8 Setup//
    pinMode(RedLED, OUTPUT);
      xTaskCreatePinnedToCore(
-    TaskBlink
+    Task8
     ,  "Task8"   // A name just for humans
     ,  1024  // This stack size can be checked & adjusted by reading the Stack Highwater
     ,  NULL
@@ -172,7 +175,7 @@ void setup() {
 
   //Task9 Setup//
     xTaskCreatePinnedToCore(
-    TaskBlink
+    Task9
     ,  "Task9"   // A name just for humans
     ,  1024  // This stack size can be checked & adjusted by reading the Stack Highwater
     ,  NULL
@@ -196,6 +199,7 @@ void Task1(void *pvParameters)  // This is a task.
   digitalWrite(GreenLED, HIGH);
   vTaskDelay(50);
   digitalWrite(GreenLED, LOW);
+  vTaskDelay(33700);
   }
 }
 
