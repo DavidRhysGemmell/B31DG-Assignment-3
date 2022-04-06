@@ -51,6 +51,7 @@ int AverageAnaInput = 0;
 //Task7//
  int half_of_maximum_range_for_analogue_input = 2048; //Maximum is 4095.
  int error_code=0;
+ int AverageAnaInput7 = 0;
 /////////
 
 //Task8//
@@ -58,18 +59,33 @@ int AverageAnaInput = 0;
 ////////
 
 //Task9//
+int ButtonStatePrint = 0;
+int FrequencyPrint = 0;
+int AverageAnaInputPrint = 0;
 ////////
-static const uint8_t AnalogueQueueLength = 1;
-static const uint8_t AverageAnalogueQueueLength = 1;
+
+static const uint8_t AnalogueQueueLength = 2;
+
 static const uint8_t ErrorCodeQueueLength = 1;
-static const uint8_t PushButtonQueueLength = 1;
-static const uint8_t FrequencyQueueLength = 1;
+
 //Global Variable
 static QueueHandle_t AnalogueQueue;
-static QueueHandle_t AverageAnalogueQueue;
 static QueueHandle_t ErrorCodeQueue;
-static QueueHandle_t PushButtonQueue;
-static QueueHandle_t FrequencyQueue;
+
+
+
+struct PrintedVariables {
+ int ButtonStateGlobal = 0;
+ int FrequencyGlobal = 0;
+ int AverageAnalogueInputGlobal = 0; 
+} PrintedStuff;
+
+
+TickType_t Task1Freq = 40; //Work this out
+TickType_t Task2Freq = 40;
+TickType_t Task9Freq = 40;
+
+
 //Defines 9 tasks.
 void Task1( void *pvParameters );
 void Task2( void *pvParameters );
@@ -90,7 +106,8 @@ void setup() {
     xTaskCreatePinnedToCore(
     Task1
     ,  "Task1"   // A name just for humans
-    ,  512  // This stack size can be checked & adjusted by reading the Stack Highwater
+    ,  1024
+    // This stack size can be checked & adjusted by reading the Stack Highwater
     ,  NULL
     ,  2  // Priority, with 3 (configMAX_PRIORITIES - 1) being the highest, and 0 being the lowest.
     ,  NULL 
@@ -116,7 +133,7 @@ void setup() {
     ,  "Task3"   // A name just for humans
     ,  4096  // This stack size can be checked & adjusted by reading the Stack Highwater
     ,  NULL
-    ,  2  // Priority, with 3 (configMAX_PRIORITIES - 1) being the highest, and 0 being the lowest.
+    ,  3  // Priority, with 3 (configMAX_PRIORITIES - 1) being the highest, and 0 being the lowest.
     ,  NULL 
     ,  0);
   //////////////
@@ -138,7 +155,7 @@ void setup() {
     xTaskCreatePinnedToCore(
     Task5
     ,  "Task5"   // A name just for humans
-    ,  32768  // This stack size can be checked & adjusted by reading the Stack Highwater
+    ,  8192  // This stack size can be checked & adjusted by reading the Stack Highwater
     ,  NULL
     ,  2  // Priority, with 3 (configMAX_PRIORITIES - 1) being the highest, and 0 being the lowest.
     ,  NULL 
@@ -191,10 +208,9 @@ void setup() {
   ////////////// 
     //Create queue
   AnalogueQueue = xQueueCreate(AnalogueQueueLength,sizeof(int));
-  AverageAnalogueQueue = xQueueCreate(AverageAnalogueQueueLength,sizeof(int));
+
   ErrorCodeQueue = xQueueCreate(ErrorCodeQueueLength,sizeof(int));
-  PushButtonQueue = xQueueCreate(PushButtonQueueLength,sizeof(int));
-  FrequencyQueue = xQueueCreate(FrequencyQueueLength,sizeof(int));
+
 }
 
 void loop() {
@@ -222,7 +238,11 @@ void Task2(void *pvParameters)  // This is a task.
 
   for (;;) 
   {
+    
 ButtonState=digitalRead(Button); //Tells when Button is pressed
+xSemaphoreTake();
+PrintedStuff.ButtonStateGlobal=ButtonState;
+xSemaphoreGive();
 vTaskDelay(200);
   }
 }
@@ -282,12 +302,18 @@ void Task5(void *pvParameters)  // This is a task.
 
   for (;;) 
   {
-   if (xQueueReceive(AnalogueQueue, &AnalogueRead, 0)==pdTRUE){ //Does this task only when there has been a value fully received in the queue.
+   if (xQueueReceive(AnalogueQueue, &LastAnalogueRead, 0)==pdTRUE){ //Does this task only when there has been a value fully received in the queue.
+  Prev1AnaInput = LastAnalogueRead; //Last input
   Prev4AnaInput = Prev3AnaInput; //4th last input
   Prev3AnaInput = Prev2AnaInput; //3rd last input
   Prev2AnaInput = Prev1AnaInput; //2nd last input
-  Prev1AnaInput = AnalogueRead; //Last input
+  
   AverageAnaInput = (Prev4AnaInput+Prev3AnaInput+Prev2AnaInput+Prev1AnaInput)/4; // Mean average.
+
+  // Save to global variables using semaphores? for tasks 7,9
+  xSemaphoreTake();
+  PrintedStuff.AverageAnalogueInput=AverageAnaInput;
+  xSemaphoreGive();
   
 
 
@@ -317,7 +343,10 @@ void Task7(void *pvParameters)  // This is a task.
 
   for (;;) 
   {
-  if (AverageAnaInput > half_of_maximum_range_for_analogue_input){
+   xSemaphoreTake();
+   AverageAnaInput7= PrintedStuff.AverageAnalogueInput;
+   xSemaphoreGive();
+  if (AverageAnaInput7 > half_of_maximum_range_for_analogue_input){
     error_code = 1;
   } else {
     error_code = 0;
@@ -351,17 +380,17 @@ void Task9(void *pvParameters)  // This is a task.
 
   for (;;) 
   {
-    if (xQueueReceive(AnalogueQueue, &AnalogueRead, 0)==pdTRUE){
-    if (xQueueReceive(PushButtonQueue, &AnalogueRead, 0)==pdTRUE){
-    if (xQueueReceive(FrequencyQueue, &AnalogueRead, 0)==pdTRUE){
-    if (ButtonState==1){
-  Serial.printf( "Button State is %d, ", ButtonState);
-  Serial.printf( "Frequency is %d, ", Frequency);
-  Serial.printf( "Average Analogue input is %d. \n", AverageAnaInput);
+xSemaphoreTake();
+ButtonStatePrint=PrintedStuff.ButtonStateGlobal;
+FrequencyPrint=PrintedStuff.FrequencyGlobal;
+AverageAnaInputPrint=PrintedStuff.AverageAnalogueInputGlobal;
+xSemaphoreGive();
+    if (ButtonStatePrint==1){
+  Serial.printf( "Button State is %d, ", ButtonStatePrint);
+  Serial.printf( "Frequency is %d, ", FrequencyPrint);
+  Serial.printf( "Average Analogue input is %d. \n", AverageAnaInputPrint);
     }
   vTaskDelay(5000);
-  }
-    }
-    }
+
   }
 }
