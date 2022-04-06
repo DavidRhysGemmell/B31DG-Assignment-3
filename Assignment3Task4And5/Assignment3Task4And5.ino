@@ -14,11 +14,17 @@ static const uint8_t AnalogueQueueLength = 2;
 //Global Variable
 static QueueHandle_t AnalogueQueue;
 
+static SemaphoreHandle_t mutex;
 
+
+struct {
 void setup() {
   // put your setup code here, to run once:
   //Task4 Setup//
   Serial.begin(115200);
+    //Create queue
+  AnalogueQueue = xQueueCreate(AnalogueQueueLength,sizeof(int));
+   mutex=xSemaphoreCreateMutex();
    pinMode(AnalogueInput, INPUT);
    pinMode(Task4OutputPin, OUTPUT);
      xTaskCreatePinnedToCore(
@@ -41,8 +47,7 @@ void setup() {
     ,  0);
   //////////////
 
-  //Create queue
-  AnalogueQueue = xQueueCreate(AnalogueQueueLength,sizeof(int));
+
 }
 
 void loop() {
@@ -56,12 +61,14 @@ void Task4(void *pvParameters)  // This is a task.
 
   for (;;) 
   {
+    if (xSemaphoreTake(mutex,0)==pdTrue){
 AnalogueRead=analogRead(AnalogueInput);
 Serial.printf( "Analogue input is %d. \n", AnalogueRead);
 if (xQueueSend(AnalogueQueue, &AnalogueRead,20)!=pdTRUE){
 Serial.println("Queue full");
   }
   vTaskDelay(41);
+}
 }
 }
 void Task5(void *pvParameters)  // This is a task.
