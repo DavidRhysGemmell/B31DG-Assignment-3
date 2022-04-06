@@ -14,6 +14,7 @@ static const uint8_t AnalogueQueueLength = 2;
 //Global Variable
 static QueueHandle_t AnalogueQueue;
 
+
 void setup() {
   // put your setup code here, to run once:
   //Task4 Setup//
@@ -79,6 +80,7 @@ void Task5(void *pvParameters)  // This is a task.
   
   Serial.printf( "Average Analogue input is %d. \n", AverageAnaInput);
 Serial.println();
+
 vTaskDelay(41);
    }
   }
