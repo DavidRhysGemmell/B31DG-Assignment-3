@@ -17,13 +17,13 @@
 
 //Task2//
 #define Button 13 //insert Button pin
-int ButtonState=0;
+int ButtonState = 0;
 /////////
 
 //Task3//
 #define squarewavein 19 //Square wave input pin number.
-unsigned long SquarewaveStart=0;
-unsigned long SquarewaveEnd=0;
+unsigned long SquarewaveStart = 0;
+unsigned long SquarewaveEnd = 0;
 unsigned long Task4StartTime = 0;
 unsigned long Task4Length = 0;
 unsigned long Frequency = 0;
@@ -33,7 +33,7 @@ int LastSquarewaveState = 0;
 
 //Task4//
 #define AnalogueInput 32 //pin number
-int AnalogueRead=0;
+int AnalogueRead = 0;
 #define Task4OutputPin 18
 ////////
 
@@ -43,19 +43,21 @@ int Prev2AnaInput = 0;
 int Prev3AnaInput = 0;
 int Prev4AnaInput = 0;
 int AverageAnaInput = 0;
+
 /////////
 
 //Task6//
 /////////
 
 //Task7//
- int half_of_maximum_range_for_analogue_input = 2048; //Maximum is 4095.
- int error_code=0;
- int AverageAnaInput7 = 0;
+int half_of_maximum_range_for_analogue_input = 2048; //Maximum is 4095.
+int error_code = 0;
+int AverageAnaInput7 = 0;
 /////////
 
 //Task8//
 #define RedLED 26//insert green pin number
+int error_code8 = 0;
 ////////
 
 //Task9//
@@ -75,15 +77,17 @@ static QueueHandle_t ErrorCodeQueue;
 
 
 struct PrintedVariables {
- int ButtonStateGlobal = 0;
- int FrequencyGlobal = 0;
- int AverageAnalogueInputGlobal = 0; 
+  int ButtonStateGlobal = 0;
+  int FrequencyGlobal = 0;
+  int AverageAnalogueInputGlobal = 0;
 } PrintedStuff;
-
-
-TickType_t Task1Freq = 40; //Work this out
-TickType_t Task2Freq = 40;
-TickType_t Task9Freq = 40;
+SemaphoreHandle_t FreqSem = xSemaphoreCreateBinary();
+SemaphoreHandle_t ButtonSem = xSemaphoreCreateBinary();
+SemaphoreHandle_t AnalogueSem = xSemaphoreCreateBinary();
+//CHANGE FREQUENCYS
+TickType_t Task1Freq = 30; //Work this out
+TickType_t Task2Freq = 5;
+TickType_t Task9Freq = 0.2;
 
 
 //Defines 9 tasks.
@@ -101,115 +105,120 @@ void Task9( void *pvParameters );
 void setup() {
   // put your setup code here, to run once:
   Serial.begin(115200);
+
+  //Create queue
+  AnalogueQueue = xQueueCreate(AnalogueQueueLength, sizeof(int));
+
+  ErrorCodeQueue = xQueueCreate(ErrorCodeQueueLength, sizeof(int));
+
+  //Semaphore create
+
   //Task1 Setup//
   pinMode(GreenLED, OUTPUT);
-    xTaskCreatePinnedToCore(
+  xTaskCreatePinnedToCore(
     Task1
     ,  "Task1"   // A name just for humans
     ,  1024
     // This stack size can be checked & adjusted by reading the Stack Highwater
     ,  NULL
     ,  2  // Priority, with 3 (configMAX_PRIORITIES - 1) being the highest, and 0 being the lowest.
-    ,  NULL 
+    ,  NULL
     ,  0);
   //////////////
 
   //Task2 Setup//
-   pinMode(Button, INPUT);
-     xTaskCreatePinnedToCore(
+  pinMode(Button, INPUT);
+  xTaskCreatePinnedToCore(
     Task2
     ,  "Task2"   // A name just for humans
     ,  1024  // This stack size can be checked & adjusted by reading the Stack Highwater
     ,  NULL
     ,  2  // Priority, with 3 (configMAX_PRIORITIES - 1) being the highest, and 0 being the lowest.
-    ,  NULL 
+    ,  NULL
     ,  0);
   //////////////
 
   //Task3 Setup//
-   pinMode(squarewavein, INPUT);
-     xTaskCreatePinnedToCore(
+  pinMode(squarewavein, INPUT);
+  xTaskCreatePinnedToCore(
     Task3
     ,  "Task3"   // A name just for humans
     ,  4096  // This stack size can be checked & adjusted by reading the Stack Highwater
     ,  NULL
     ,  3  // Priority, with 3 (configMAX_PRIORITIES - 1) being the highest, and 0 being the lowest.
-    ,  NULL 
+    ,  NULL
     ,  0);
   //////////////
 
   //Task4 Setup//
-   pinMode(AnalogueInput, INPUT);
-   pinMode(Task4OutputPin, OUTPUT);
-     xTaskCreatePinnedToCore(
+  pinMode(AnalogueInput, INPUT);
+  pinMode(Task4OutputPin, OUTPUT);
+  xTaskCreatePinnedToCore(
     Task4
     ,  "Task4"   // A name just for humans
     ,  4096  // This stack size can be checked & adjusted by reading the Stack Highwater
     ,  NULL
     ,  2  // Priority, with 3 (configMAX_PRIORITIES - 1) being the highest, and 0 being the lowest.
-    ,  NULL 
+    ,  NULL
     ,  0);
   //////////////
 
   //Task5 Setup//
-    xTaskCreatePinnedToCore(
+  xTaskCreatePinnedToCore(
     Task5
     ,  "Task5"   // A name just for humans
     ,  8192  // This stack size can be checked & adjusted by reading the Stack Highwater
     ,  NULL
     ,  2  // Priority, with 3 (configMAX_PRIORITIES - 1) being the highest, and 0 being the lowest.
-    ,  NULL 
+    ,  NULL
     ,  0);
   //////////////
 
   //Task6 Setup//
-    xTaskCreatePinnedToCore(
+  xTaskCreatePinnedToCore(
     Task6
     ,  "Task6"   // A name just for humans
     ,  1024  // This stack size can be checked & adjusted by reading the Stack Highwater
     ,  NULL
     ,  2  // Priority, with 3 (configMAX_PRIORITIES - 1) being the highest, and 0 being the lowest.
-    ,  NULL 
+    ,  NULL
     ,  0);
   //////////////
- 
+
   //Task7 Setup//
-    xTaskCreatePinnedToCore(
+  xTaskCreatePinnedToCore(
     Task7
     ,  "Task7"   // A name just for humans
     ,  1024  // This stack size can be checked & adjusted by reading the Stack Highwater
     ,  NULL
     ,  2  // Priority, with 3 (configMAX_PRIORITIES - 1) being the highest, and 0 being the lowest.
-    ,  NULL 
+    ,  NULL
     ,  0);
   //////////////
 
   //Task8 Setup//
-   pinMode(RedLED, OUTPUT);
-     xTaskCreatePinnedToCore(
+  pinMode(RedLED, OUTPUT);
+  xTaskCreatePinnedToCore(
     Task8
     ,  "Task8"   // A name just for humans
     ,  1024  // This stack size can be checked & adjusted by reading the Stack Highwater
     ,  NULL
     ,  2  // Priority, with 3 (configMAX_PRIORITIES - 1) being the highest, and 0 being the lowest.
-    ,  NULL 
+    ,  NULL
     ,  0);
   //////////////
 
   //Task9 Setup//
-    xTaskCreatePinnedToCore(
+  xTaskCreatePinnedToCore(
     Task9
     ,  "Task9"   // A name just for humans
     ,  4096  // This stack size can be checked & adjusted by reading the Stack Highwater
     ,  NULL
     ,  2  // Priority, with 3 (configMAX_PRIORITIES - 1) being the highest, and 0 being the lowest.
-    ,  NULL 
+    ,  NULL
     ,  0);
-  ////////////// 
-    //Create queue
-  AnalogueQueue = xQueueCreate(AnalogueQueueLength,sizeof(int));
+  //////////////
 
-  ErrorCodeQueue = xQueueCreate(ErrorCodeQueueLength,sizeof(int));
 
 }
 
@@ -222,12 +231,12 @@ void Task1(void *pvParameters)  // This is a task.
   (void) pvParameters;
 
 
-  for (;;) 
+  for (;;)
   {
-  digitalWrite(GreenLED, HIGH);
-  delayMicroseconds(50);
-  digitalWrite(GreenLED, LOW);
-  vTaskDelay(34);
+    digitalWrite(GreenLED, HIGH);
+    delayMicroseconds(50);
+    digitalWrite(GreenLED, LOW);
+    vTaskDelay(34);
   }
 }
 
@@ -236,14 +245,14 @@ void Task2(void *pvParameters)  // This is a task.
   (void) pvParameters;
 
 
-  for (;;) 
+  for (;;)
   {
-    
-ButtonState=digitalRead(Button); //Tells when Button is pressed
-xSemaphoreTake();
-PrintedStuff.ButtonStateGlobal=ButtonState;
-xSemaphoreGive();
-vTaskDelay(200);
+
+    ButtonState = digitalRead(Button); //Tells when Button is pressed
+    xSemaphoreTake(ButtonSem, 5);
+    PrintedStuff.ButtonStateGlobal = ButtonState;
+    xSemaphoreGive(ButtonSem);
+    vTaskDelay(200);
   }
 }
 
@@ -252,31 +261,34 @@ void Task3(void *pvParameters)  // This is a task.
   (void) pvParameters;
 
 
-  for (;;) 
+  for (;;)
   {
-  SquarewaveState=digitalRead(squarewavein); // Saving the initial state of the square wave.
-  LastSquarewaveState=SquarewaveState;
-  Task4StartTime=micros();
-  
-  while (SquarewaveState==LastSquarewaveState && micros()-Task4StartTime<4000){
-    SquarewaveState = digitalRead(squarewavein); // We read until the state changes
-  }
-  
-    SquarewaveStart=micros(); // Save this start time.
-    LastSquarewaveState=SquarewaveState; // Save start state.
-    while (SquarewaveState==LastSquarewaveState && micros()-Task4StartTime<4000){ //Read again until state changes again
-      SquarewaveState = digitalRead(squarewavein);  
+    SquarewaveState = digitalRead(squarewavein); // Saving the initial state of the square wave.
+    LastSquarewaveState = SquarewaveState;
+    Task4StartTime = micros();
+
+    while (SquarewaveState == LastSquarewaveState && micros() - Task4StartTime < 4000) {
+      SquarewaveState = digitalRead(squarewavein); // We read until the state changes
     }
-      SquarewaveEnd = micros(); // Save the end time.
-      if (micros()-Task4StartTime>=4000){
-        Frequency=0; //frequency less than 500HZ
-        Serial.println("No square wave input detected, ");
-      } else {
-      Frequency = 1000000/(2*(SquarewaveEnd-SquarewaveStart)); // Calculate frequency     
+
+    SquarewaveStart = micros(); // Save this start time.
+    LastSquarewaveState = SquarewaveState; // Save start state.
+    while (SquarewaveState == LastSquarewaveState && micros() - Task4StartTime < 4000) { //Read again until state changes again
+      SquarewaveState = digitalRead(squarewavein);
+    }
+    SquarewaveEnd = micros(); // Save the end time.
+    if (micros() - Task4StartTime >= 4000) {
+      Frequency = 0; //frequency less than 500HZ
+      Serial.println("No square wave input detected, ");
+    } else {
+      Frequency = 1000000 / (2 * (SquarewaveEnd - SquarewaveStart)); // Calculate frequency
+    }
+    xSemaphoreTake(FreqSem, 5);
+    PrintedStuff.FrequencyGlobal = Frequency;
+    xSemaphoreGive(FreqSem);
+    Task4Length = (micros() - Task4StartTime) / 1000; //Task4length in millis
+    vTaskDelay(1000 - Task4Length); //Suitable delay
   }
-  Task4Length=(micros()-Task4StartTime-2)/1000; //Task4length in millis
- vTaskDelay(1000-Task4Length); //Suitable delay
-}
 }
 
 void Task4(void *pvParameters)  // This is a task.
@@ -284,15 +296,15 @@ void Task4(void *pvParameters)  // This is a task.
   (void) pvParameters;
 
 
-  for (;;) 
+  for (;;)
   {
-AnalogueRead=analogRead(AnalogueInput);
+    AnalogueRead = analogRead(AnalogueInput);
 
-if (xQueueSend(AnalogueQueue, &AnalogueRead,20)!=pdTRUE){
-Serial.println("Queue full");
+    if (xQueueSend(AnalogueQueue, &AnalogueRead, 20) != pdTRUE) {
+      Serial.println("Queue full");
+    }
+    vTaskDelay(41);
   }
-  vTaskDelay(41);
-}
 }
 
 void Task5(void *pvParameters)  // This is a task.
@@ -300,25 +312,24 @@ void Task5(void *pvParameters)  // This is a task.
   (void) pvParameters;
 
 
-  for (;;) 
+  for (;;)
   {
-   if (xQueueReceive(AnalogueQueue, &LastAnalogueRead, 0)==pdTRUE){ //Does this task only when there has been a value fully received in the queue.
-  Prev1AnaInput = LastAnalogueRead; //Last input
-  Prev4AnaInput = Prev3AnaInput; //4th last input
-  Prev3AnaInput = Prev2AnaInput; //3rd last input
-  Prev2AnaInput = Prev1AnaInput; //2nd last input
-  
-  AverageAnaInput = (Prev4AnaInput+Prev3AnaInput+Prev2AnaInput+Prev1AnaInput)/4; // Mean average.
+    if (xQueueReceive(AnalogueQueue, &Prev1AnaInput, 0) == pdTRUE) { //Does this task only when there has been a value fully received in the queue.
+      Prev4AnaInput = Prev3AnaInput; //4th last input
+      Prev3AnaInput = Prev2AnaInput; //3rd last input
+      Prev2AnaInput = Prev1AnaInput; //2nd last input
 
-  // Save to global variables using semaphores? for tasks 7,9
-  xSemaphoreTake();
-  PrintedStuff.AverageAnalogueInput=AverageAnaInput;
-  xSemaphoreGive();
-  
+      AverageAnaInput = (Prev4AnaInput + Prev3AnaInput + Prev2AnaInput + Prev1AnaInput) / 4; // Mean average.
+
+      // Save to global variables using semaphores? for tasks 7,9
+      xSemaphoreTake(AnalogueSem, 5);
+      PrintedStuff.AverageAnalogueInputGlobal = AverageAnaInput;
+      xSemaphoreGive(AnalogueSem);
 
 
-vTaskDelay(41);
-   }
+
+      vTaskDelay(41);
+    }
   }
 }
 
@@ -327,12 +338,12 @@ void Task6(void *pvParameters)  // This is a task.
   (void) pvParameters;
 
 
-  for (;;) 
+  for (;;)
   {
-  for (int i=1; i<=1000; i++){
-    __asm__ __volatile__ ("nop");
-  }
-  vTaskDelay(100);
+    for (int i = 1; i <= 1000; i++) {
+      __asm__ __volatile__ ("nop");
+    }
+    vTaskDelay(100);
   }
 }
 
@@ -341,17 +352,20 @@ void Task7(void *pvParameters)  // This is a task.
   (void) pvParameters;
 
 
-  for (;;) 
+  for (;;)
   {
-   xSemaphoreTake();
-   AverageAnaInput7= PrintedStuff.AverageAnalogueInput;
-   xSemaphoreGive();
-  if (AverageAnaInput7 > half_of_maximum_range_for_analogue_input){
-    error_code = 1;
-  } else {
-    error_code = 0;
-  }
-  vTaskDelay(333);
+    xSemaphoreTake(AnalogueSem, 5);
+    AverageAnaInput7 = PrintedStuff.AverageAnalogueInputGlobal;
+    xSemaphoreGive(AnalogueSem);
+    if (AverageAnaInput7 > half_of_maximum_range_for_analogue_input) {
+      error_code = 1;
+    } else {
+      error_code = 0;
+    }
+    if (xQueueSend(ErrorCodeQueue, &error_code, 20) != pdTRUE) {
+      Serial.print("Queue Full");
+    }
+    vTaskDelay(333);
   }
 }
 
@@ -360,16 +374,16 @@ void Task8(void *pvParameters)  // This is a task.
   (void) pvParameters;
 
 
-  for (;;) 
+  for (;;)
   {
-    if(xQueueReceive(ErrorCodeQueue, &error_code,0)!=pdTRUE){
-  if (error_code==1){
-    digitalWrite(RedLED, HIGH);
-  } else {
-    digitalWrite(RedLED, LOW);
-  }
-  vTaskDelay(333);
-  }
+    if (xQueueReceive(ErrorCodeQueue, &error_code8, 0) != pdTRUE) {
+      if (error_code8 == 1) {
+        digitalWrite(RedLED, HIGH);
+      } else {
+        digitalWrite(RedLED, LOW);
+      }
+      vTaskDelay(333);
+    }
   }
 }
 
@@ -378,19 +392,23 @@ void Task9(void *pvParameters)  // This is a task.
   (void) pvParameters;
 
 
-  for (;;) 
+  for (;;)
   {
-xSemaphoreTake();
-ButtonStatePrint=PrintedStuff.ButtonStateGlobal;
-FrequencyPrint=PrintedStuff.FrequencyGlobal;
-AverageAnaInputPrint=PrintedStuff.AverageAnalogueInputGlobal;
-xSemaphoreGive();
-    if (ButtonStatePrint==1){
-  Serial.printf( "Button State is %d, ", ButtonStatePrint);
-  Serial.printf( "Frequency is %d, ", FrequencyPrint);
-  Serial.printf( "Average Analogue input is %d. \n", AverageAnaInputPrint);
+    xSemaphoreTake(ButtonSem, 5);
+    ButtonStatePrint = PrintedStuff.ButtonStateGlobal;
+    xSemaphoreGive(ButtonSem);
+    xSemaphoreTake(FreqSem, 5);
+    FrequencyPrint = PrintedStuff.FrequencyGlobal;
+    xSemaphoreGive(FreqSem);
+    xSemaphoreTake(AnalogueSem, 5);
+    AverageAnaInputPrint = PrintedStuff.AverageAnalogueInputGlobal;
+    xSemaphoreGive(AnalogueSem);
+    if (ButtonStatePrint == 1) {
+      Serial.printf( "Button State is %d, ", ButtonStatePrint);
+      Serial.printf( "Frequency is %d, ", FrequencyPrint);
+      Serial.printf( "Average Analogue input is %d. \n", AverageAnaInputPrint);
     }
-  vTaskDelay(5000);
+    vTaskDelay(5000);
 
   }
 }
