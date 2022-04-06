@@ -59,7 +59,17 @@ int AverageAnaInput = 0;
 
 //Task9//
 ////////
-
+static const uint8_t AnalogueQueueLength = 1;
+static const uint8_t AverageAnalogueQueueLength = 1;
+static const uint8_t ErrorCodeQueueLength = 1;
+static const uint8_t PushButtonQueueLength = 1;
+static const uint8_t FrequencyQueueLength = 1;
+//Global Variable
+static QueueHandle_t AnalogueQueue;
+static QueueHandle_t AverageAnalogueQueue;
+static QueueHandle_t ErrorCodeQueue;
+static QueueHandle_t PushButtonQueue;
+static QueueHandle_t FrequencyQueue;
 //Defines 9 tasks.
 void Task1( void *pvParameters );
 void Task2( void *pvParameters );
@@ -104,7 +114,7 @@ void setup() {
      xTaskCreatePinnedToCore(
     Task3
     ,  "Task3"   // A name just for humans
-    ,  1024  // This stack size can be checked & adjusted by reading the Stack Highwater
+    ,  4096  // This stack size can be checked & adjusted by reading the Stack Highwater
     ,  NULL
     ,  2  // Priority, with 3 (configMAX_PRIORITIES - 1) being the highest, and 0 being the lowest.
     ,  NULL 
@@ -128,7 +138,7 @@ void setup() {
     xTaskCreatePinnedToCore(
     Task5
     ,  "Task5"   // A name just for humans
-    ,  4096  // This stack size can be checked & adjusted by reading the Stack Highwater
+    ,  32768  // This stack size can be checked & adjusted by reading the Stack Highwater
     ,  NULL
     ,  2  // Priority, with 3 (configMAX_PRIORITIES - 1) being the highest, and 0 being the lowest.
     ,  NULL 
@@ -179,6 +189,12 @@ void setup() {
     ,  NULL 
     ,  0);
   ////////////// 
+    //Create queue
+  AnalogueQueue = xQueueCreate(AnalogueQueueLength,sizeof(int));
+  AverageAnalogueQueue = xQueueCreate(AverageAnalogueQueueLength,sizeof(int));
+  ErrorCodeQueue = xQueueCreate(ErrorCodeQueueLength,sizeof(int));
+  PushButtonQueue = xQueueCreate(PushButtonQueueLength,sizeof(int));
+  FrequencyQueue = xQueueCreate(FrequencyQueueLength,sizeof(int));
 }
 
 void loop() {
@@ -193,9 +209,9 @@ void Task1(void *pvParameters)  // This is a task.
   for (;;) 
   {
   digitalWrite(GreenLED, HIGH);
-  vTaskDelay(50);
+  delayMicroseconds(50);
   digitalWrite(GreenLED, LOW);
-  vTaskDelay(33700);
+  vTaskDelay(34);
   }
 }
 
@@ -250,11 +266,13 @@ void Task4(void *pvParameters)  // This is a task.
 
   for (;;) 
   {
-    digitalWrite(Task4OutputPin, HIGH);
 AnalogueRead=analogRead(AnalogueInput);
-vTaskDelay(41);
-digitalWrite(Task4OutputPin, LOW);
+
+if (xQueueSend(AnalogueQueue, &AnalogueRead,20)!=pdTRUE){
+Serial.println("Queue full");
   }
+  vTaskDelay(41);
+}
 }
 
 void Task5(void *pvParameters)  // This is a task.
@@ -264,12 +282,17 @@ void Task5(void *pvParameters)  // This is a task.
 
   for (;;) 
   {
+   if (xQueueReceive(AnalogueQueue, &AnalogueRead, 0)==pdTRUE){ //Does this task only when there has been a value fully received in the queue.
   Prev4AnaInput = Prev3AnaInput; //4th last input
   Prev3AnaInput = Prev2AnaInput; //3rd last input
   Prev2AnaInput = Prev1AnaInput; //2nd last input
   Prev1AnaInput = AnalogueRead; //Last input
   AverageAnaInput = (Prev4AnaInput+Prev3AnaInput+Prev2AnaInput+Prev1AnaInput)/4; // Mean average.
-  vTaskDelay(41);
+  
+
+
+vTaskDelay(41);
+   }
   }
 }
 
@@ -310,12 +333,14 @@ void Task8(void *pvParameters)  // This is a task.
 
   for (;;) 
   {
+    if(xQueueReceive(ErrorCodeQueue, &error_code,0)!=pdTRUE){
   if (error_code==1){
     digitalWrite(RedLED, HIGH);
   } else {
     digitalWrite(RedLED, LOW);
   }
   vTaskDelay(333);
+  }
   }
 }
 
@@ -326,9 +351,17 @@ void Task9(void *pvParameters)  // This is a task.
 
   for (;;) 
   {
+    if (xQueueReceive(AnalogueQueue, &AnalogueRead, 0)==pdTRUE){
+    if (xQueueReceive(PushButtonQueue, &AnalogueRead, 0)==pdTRUE){
+    if (xQueueReceive(FrequencyQueue, &AnalogueRead, 0)==pdTRUE){
+    if (ButtonState==1){
   Serial.printf( "Button State is %d, ", ButtonState);
   Serial.printf( "Frequency is %d, ", Frequency);
   Serial.printf( "Average Analogue input is %d. \n", AverageAnaInput);
+    }
   vTaskDelay(5000);
+  }
+    }
+    }
   }
 }
