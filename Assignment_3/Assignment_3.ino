@@ -87,7 +87,7 @@ SemaphoreHandle_t AnalogueSem = xSemaphoreCreateBinary();
 //CHANGE FREQUENCYS
 TickType_t Task1Freq = 30; //Work this out
 TickType_t Task2Freq = 5;
-TickType_t Task9Freq = 0.2;
+TickType_t Task9Freq = 5000;
 
 
 //Defines 9 tasks.
@@ -118,7 +118,7 @@ void setup() {
   xTaskCreatePinnedToCore(
     Task1
     ,  "Task1"   // A name just for humans
-    ,  1024
+    ,  570 //568 is high stack watermark
     // This stack size can be checked & adjusted by reading the Stack Highwater
     ,  NULL
     ,  2  // Priority, with 3 (configMAX_PRIORITIES - 1) being the highest, and 0 being the lowest.
@@ -131,7 +131,7 @@ void setup() {
   xTaskCreatePinnedToCore(
     Task2
     ,  "Task2"   // A name just for humans
-    ,  1024  // This stack size can be checked & adjusted by reading the Stack Highwater
+    ,  515 // 492 is HSW
     ,  NULL
     ,  2  // Priority, with 3 (configMAX_PRIORITIES - 1) being the highest, and 0 being the lowest.
     ,  NULL
@@ -143,7 +143,7 @@ void setup() {
   xTaskCreatePinnedToCore(
     Task3
     ,  "Task3"   // A name just for humans
-    ,  4096  // This stack size can be checked & adjusted by reading the Stack Highwater
+    ,  525  // This stack size can be checked & adjusted by reading the Stack Highwater
     ,  NULL
     ,  3  // Priority, with 3 (configMAX_PRIORITIES - 1) being the highest, and 0 being the lowest.
     ,  NULL
@@ -156,7 +156,7 @@ void setup() {
   xTaskCreatePinnedToCore(
     Task4
     ,  "Task4"   // A name just for humans
-    ,  4096  // This stack size can be checked & adjusted by reading the Stack Highwater
+    ,  570  // 560 HSW
     ,  NULL
     ,  2  // Priority, with 3 (configMAX_PRIORITIES - 1) being the highest, and 0 being the lowest.
     ,  NULL
@@ -167,7 +167,7 @@ void setup() {
   xTaskCreatePinnedToCore(
     Task5
     ,  "Task5"   // A name just for humans
-    ,  8192  // This stack size can be checked & adjusted by reading the Stack Highwater
+    ,  510  // This stack size can be checked & adjusted by reading the Stack Highwater
     ,  NULL
     ,  2  // Priority, with 3 (configMAX_PRIORITIES - 1) being the highest, and 0 being the lowest.
     ,  NULL
@@ -178,7 +178,7 @@ void setup() {
   xTaskCreatePinnedToCore(
     Task6
     ,  "Task6"   // A name just for humans
-    ,  1024  // This stack size can be checked & adjusted by reading the Stack Highwater
+    ,  470  // This stack size can be checked & adjusted by reading the Stack Highwater
     ,  NULL
     ,  2  // Priority, with 3 (configMAX_PRIORITIES - 1) being the highest, and 0 being the lowest.
     ,  NULL
@@ -189,7 +189,7 @@ void setup() {
   xTaskCreatePinnedToCore(
     Task7
     ,  "Task7"   // A name just for humans
-    ,  1024  // This stack size can be checked & adjusted by reading the Stack Highwater
+    ,  520  // This stack size can be checked & adjusted by reading the Stack Highwater
     ,  NULL
     ,  2  // Priority, with 3 (configMAX_PRIORITIES - 1) being the highest, and 0 being the lowest.
     ,  NULL
@@ -201,7 +201,7 @@ void setup() {
   xTaskCreatePinnedToCore(
     Task8
     ,  "Task8"   // A name just for humans
-    ,  1024  // This stack size can be checked & adjusted by reading the Stack Highwater
+    ,  530  //
     ,  NULL
     ,  2  // Priority, with 3 (configMAX_PRIORITIES - 1) being the highest, and 0 being the lowest.
     ,  NULL
@@ -212,7 +212,7 @@ void setup() {
   xTaskCreatePinnedToCore(
     Task9
     ,  "Task9"   // A name just for humans
-    ,  4096  // This stack size can be checked & adjusted by reading the Stack Highwater
+    ,  850  // This stack size can be checked & adjusted by reading the Stack Highwater
     ,  NULL
     ,  2  // Priority, with 3 (configMAX_PRIORITIES - 1) being the highest, and 0 being the lowest.
     ,  NULL
@@ -236,7 +236,8 @@ void Task1(void *pvParameters)  // This is a task.
     digitalWrite(GreenLED, HIGH);
     delayMicroseconds(50);
     digitalWrite(GreenLED, LOW);
-    vTaskDelay(34);
+  //Serial.println(uxTaskGetStackHighWaterMark(NULL)); //Used to test HSW
+    vTaskDelay(1000/Task1Freq);
   }
 }
 
@@ -252,7 +253,8 @@ void Task2(void *pvParameters)  // This is a task.
     xSemaphoreTake(ButtonSem, 5);
     PrintedStuff.ButtonStateGlobal = ButtonState;
     xSemaphoreGive(ButtonSem);
-    vTaskDelay(200);
+//Serial.println(uxTaskGetStackHighWaterMark(NULL));
+    vTaskDelay(1000/Task2Freq);
   }
 }
 
@@ -287,6 +289,7 @@ void Task3(void *pvParameters)  // This is a task.
     PrintedStuff.FrequencyGlobal = Frequency;
     xSemaphoreGive(FreqSem);
     Task4Length = (micros() - Task4StartTime) / 1000; //Task4length in millis
+    //Serial.println(uxTaskGetStackHighWaterMark(NULL)); //Used to test HSW
     vTaskDelay(1000 - Task4Length); //Suitable delay
   }
 }
@@ -301,8 +304,9 @@ void Task4(void *pvParameters)  // This is a task.
     AnalogueRead = analogRead(AnalogueInput);
 
     if (xQueueSend(AnalogueQueue, &AnalogueRead, 20) != pdTRUE) {
-      Serial.println("Queue full");
+      Serial.println("Queue 4 full");
     }
+    //Serial.println(uxTaskGetStackHighWaterMark(NULL)); //Used to test HSW
     vTaskDelay(41);
   }
 }
@@ -326,7 +330,7 @@ void Task5(void *pvParameters)  // This is a task.
       PrintedStuff.AverageAnalogueInputGlobal = AverageAnaInput;
       xSemaphoreGive(AnalogueSem);
 
-
+//Serial.println(uxTaskGetStackHighWaterMark(NULL)); //Used to test HSW
 
       vTaskDelay(41);
     }
@@ -343,6 +347,7 @@ void Task6(void *pvParameters)  // This is a task.
     for (int i = 1; i <= 1000; i++) {
       __asm__ __volatile__ ("nop");
     }
+    //Serial.println(uxTaskGetStackHighWaterMark(NULL)); //Used to test HSW
     vTaskDelay(100);
   }
 }
@@ -363,8 +368,9 @@ void Task7(void *pvParameters)  // This is a task.
       error_code = 0;
     }
     if (xQueueSend(ErrorCodeQueue, &error_code, 20) != pdTRUE) {
-      Serial.print("Queue Full");
+      Serial.print("Queue 7 Full");
     }
+    //Serial.println(uxTaskGetStackHighWaterMark(NULL)); //Used to test HSW
     vTaskDelay(333);
   }
 }
@@ -382,6 +388,7 @@ void Task8(void *pvParameters)  // This is a task.
       } else {
         digitalWrite(RedLED, LOW);
       }
+      //Serial.println(uxTaskGetStackHighWaterMark(NULL)); //Used to test HSW
       vTaskDelay(333);
     }
   }
@@ -408,7 +415,8 @@ void Task9(void *pvParameters)  // This is a task.
       Serial.printf( "Frequency is %d, ", FrequencyPrint);
       Serial.printf( "Average Analogue input is %d. \n", AverageAnaInputPrint);
     }
-    vTaskDelay(5000);
+    //Serial.println(uxTaskGetStackHighWaterMark(NULL)); //Used to test HSW
+    vTaskDelay(Task9Freq);
 
   }
 }
