@@ -284,7 +284,7 @@ void Task3(void *pvParameters)  // This is a task.
     SquarewaveEnd = micros(); // Save the end time.
     if (micros() - Task4StartTime >= 4000) {
       Frequency = 0; //frequency less than 500HZ
-      Serial.println("No square wave input detected, ");
+      Serial.println("No square wave input detected, "); // This posts if there is no squarewave input, or if it is less than 500HZ.
     } else {
       Frequency = 1000000 / (2 * (SquarewaveEnd - SquarewaveStart)); // Calculate frequency
     }
