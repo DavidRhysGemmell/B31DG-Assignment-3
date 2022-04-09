@@ -85,8 +85,8 @@ SemaphoreHandle_t AnalogueSem = xSemaphoreCreateBinary(); // Create Filtered ana
 
 
 //CHANGE FREQUENCYS
-TickType_t Task1Freq = 30; //Work this out
-TickType_t Task2Freq = 5;
+TickType_t Task1Freq = 34; //Work this out
+TickType_t Task2Freq = 200;
 TickType_t Task9Freq = 5000;
 
 
@@ -237,7 +237,7 @@ void Task1(void *pvParameters)
     delayMicroseconds(50);
     digitalWrite(GreenLED, LOW); // LED off
     //Serial.println(uxTaskGetStackHighWaterMark(NULL)); //Used to test HSW
-    vTaskDelay(1000 / Task1Freq); // Delays task for required length of time until it is needed to be executed again
+    vTaskDelay(Task1Freq); // Delays task for required length of time until it is needed to be executed again
   }
 }
 
@@ -255,7 +255,7 @@ void Task2(void *pvParameters)  // This is a task.
     PrintedStuff.ButtonStateGlobal = ButtonState;
     xSemaphoreGive(ButtonSem);
     //Serial.println(uxTaskGetStackHighWaterMark(NULL));
-    vTaskDelay(1000 / Task2Freq); // Delays task for required length of time until it is needed to be executed again
+    vTaskDelay(Task2Freq); // Delays task for required length of time until it is needed to be executed again
   }
 }
 
