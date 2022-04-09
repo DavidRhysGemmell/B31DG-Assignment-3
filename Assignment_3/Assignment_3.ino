@@ -66,24 +66,24 @@ int FrequencyPrint = 0;
 int AverageAnaInputPrint = 0;
 ////////
 
-static const uint8_t AnalogueQueueLength = 2;
+static const uint8_t AnalogueQueueLength = 2; //Queue length of the Analogue queue
+static const uint8_t ErrorCodeQueueLength = 1; //Queue length of the error code queue
 
-static const uint8_t ErrorCodeQueueLength = 1;
-
-//Global Variable
-static QueueHandle_t AnalogueQueue;
-static QueueHandle_t ErrorCodeQueue;
-
+//Global Variables
+static QueueHandle_t AnalogueQueue;  //Analogue queue name
+static QueueHandle_t ErrorCodeQueue; //Error code queue name
 
 
-struct PrintedVariables {
+struct PrintedVariables { // These are our global variables, only accessed using semaphores to protect them
   int ButtonStateGlobal = 0;
   int FrequencyGlobal = 0;
   int AverageAnalogueInputGlobal = 0;
 } PrintedStuff;
-SemaphoreHandle_t FreqSem = xSemaphoreCreateBinary();
-SemaphoreHandle_t ButtonSem = xSemaphoreCreateBinary();
-SemaphoreHandle_t AnalogueSem = xSemaphoreCreateBinary();
+SemaphoreHandle_t FreqSem = xSemaphoreCreateBinary(); //Create Frequency Semaphore
+SemaphoreHandle_t ButtonSem = xSemaphoreCreateBinary(); // CreateButton Semaphore
+SemaphoreHandle_t AnalogueSem = xSemaphoreCreateBinary(); // Create Filtered analogue Semaphore
+
+
 //CHANGE FREQUENCYS
 TickType_t Task1Freq = 30; //Work this out
 TickType_t Task2Freq = 5;
@@ -103,15 +103,13 @@ void Task9( void *pvParameters );
 
 
 void setup() {
-  // put your setup code here, to run once:
-  Serial.begin(115200);
+  
+  Serial.begin(115200); // Start serial
 
-  //Create queue
+  //Create queues
   AnalogueQueue = xQueueCreate(AnalogueQueueLength, sizeof(int));
-
   ErrorCodeQueue = xQueueCreate(ErrorCodeQueueLength, sizeof(int));
 
-  //Semaphore create
 
   //Task1 Setup//
   pinMode(GreenLED, OUTPUT);
@@ -189,7 +187,7 @@ void setup() {
   xTaskCreatePinnedToCore(
     Task7
     ,  "Task7"   // A name just for humans
-    ,  520  // This stack size can be checked & adjusted by reading the Stack Highwater
+    ,  520  
     ,  NULL
     ,  2  // Priority, with 3 (configMAX_PRIORITIES - 1) being the highest, and 0 being the lowest.
     ,  NULL
@@ -212,7 +210,7 @@ void setup() {
   xTaskCreatePinnedToCore(
     Task9
     ,  "Task9"   // A name just for humans
-    ,  850  // This stack size can be checked & adjusted by reading the Stack Highwater
+    ,  850  // Stack needs to be this high, stack is much higher when button is pressed and 
     ,  NULL
     ,  2  // Priority, with 3 (configMAX_PRIORITIES - 1) being the highest, and 0 being the lowest.
     ,  NULL
@@ -226,21 +224,24 @@ void loop() {
   // put your main code here, to run repeatedly:
 
 }
-void Task1(void *pvParameters)  // This is a task.
+
+// Task 1
+void Task1(void *pvParameters)  
 {
   (void) pvParameters;
 
 
   for (;;)
   {
-    digitalWrite(GreenLED, HIGH);
+    digitalWrite(GreenLED, HIGH); // LED on
     delayMicroseconds(50);
-    digitalWrite(GreenLED, LOW);
-  //Serial.println(uxTaskGetStackHighWaterMark(NULL)); //Used to test HSW
-    vTaskDelay(1000/Task1Freq);
+    digitalWrite(GreenLED, LOW); // LED off
+    //Serial.println(uxTaskGetStackHighWaterMark(NULL)); //Used to test HSW
+    vTaskDelay(1000 / Task1Freq); // Delays task for required length of time until it is needed to be executed again
   }
 }
 
+// Task 2
 void Task2(void *pvParameters)  // This is a task.
 {
   (void) pvParameters;
@@ -253,11 +254,13 @@ void Task2(void *pvParameters)  // This is a task.
     xSemaphoreTake(ButtonSem, 5);
     PrintedStuff.ButtonStateGlobal = ButtonState;
     xSemaphoreGive(ButtonSem);
-//Serial.println(uxTaskGetStackHighWaterMark(NULL));
-    vTaskDelay(1000/Task2Freq);
+    //Serial.println(uxTaskGetStackHighWaterMark(NULL));
+    vTaskDelay(1000 / Task2Freq); // Delays task for required length of time until it is needed to be executed again
   }
 }
 
+
+// Task 3
 void Task3(void *pvParameters)  // This is a task.
 {
   (void) pvParameters;
@@ -290,10 +293,12 @@ void Task3(void *pvParameters)  // This is a task.
     xSemaphoreGive(FreqSem);
     Task4Length = (micros() - Task4StartTime) / 1000; //Task4length in millis
     //Serial.println(uxTaskGetStackHighWaterMark(NULL)); //Used to test HSW
-    vTaskDelay(1000 - Task4Length); //Suitable delay
+    vTaskDelay(1000 - Task4Length); // Delays task for required length of time until it is needed to be executed again
   }
 }
 
+
+// Task 4
 void Task4(void *pvParameters)  // This is a task.
 {
   (void) pvParameters;
@@ -301,16 +306,17 @@ void Task4(void *pvParameters)  // This is a task.
 
   for (;;)
   {
-    AnalogueRead = analogRead(AnalogueInput);
-
-    if (xQueueSend(AnalogueQueue, &AnalogueRead, 20) != pdTRUE) {
-      Serial.println("Queue 4 full");
+    AnalogueRead = analogRead(AnalogueInput); // Reads analogue input
+    if (xQueueSend(AnalogueQueue, &AnalogueRead, 20) != pdTRUE) { //Sends analogue input to analogue queue
+      Serial.println("Queue 4 full"); // If queue is full this is posted to serial monitor
     }
     //Serial.println(uxTaskGetStackHighWaterMark(NULL)); //Used to test HSW
-    vTaskDelay(41);
+    vTaskDelay(41); // Delays task for required length of time until it is needed to be executed again
   }
 }
 
+
+// Task 5 
 void Task5(void *pvParameters)  // This is a task.
 {
   (void) pvParameters;
@@ -318,25 +324,27 @@ void Task5(void *pvParameters)  // This is a task.
 
   for (;;)
   {
-    if (xQueueReceive(AnalogueQueue, &Prev1AnaInput, 0) == pdTRUE) { //Does this task only when there has been a value fully received in the queue.
+    if (xQueueReceive(AnalogueQueue, &Prev1AnaInput, 0) == pdTRUE) { //Does this task only when there has been a value fully received in the analogue queue, sent by task 4.
       Prev4AnaInput = Prev3AnaInput; //4th last input
       Prev3AnaInput = Prev2AnaInput; //3rd last input
       Prev2AnaInput = Prev1AnaInput; //2nd last input
 
       AverageAnaInput = (Prev4AnaInput + Prev3AnaInput + Prev2AnaInput + Prev1AnaInput) / 4; // Mean average.
 
-      // Save to global variables using semaphores? for tasks 7,9
+      // Save to global variables using Analogue semaphore for tasks 7,9
       xSemaphoreTake(AnalogueSem, 5);
       PrintedStuff.AverageAnalogueInputGlobal = AverageAnaInput;
-      xSemaphoreGive(AnalogueSem);
+      xSemaphoreGive(AnalogueSem); 
 
-//Serial.println(uxTaskGetStackHighWaterMark(NULL)); //Used to test HSW
+      //Serial.println(uxTaskGetStackHighWaterMark(NULL)); //Used to test HSW
 
-      vTaskDelay(41);
+      vTaskDelay(41); // Delays task for required length of time until it is needed to be executed again
     }
   }
 }
 
+
+// Task 6
 void Task6(void *pvParameters)  // This is a task.
 {
   (void) pvParameters;
@@ -348,10 +356,12 @@ void Task6(void *pvParameters)  // This is a task.
       __asm__ __volatile__ ("nop");
     }
     //Serial.println(uxTaskGetStackHighWaterMark(NULL)); //Used to test HSW
-    vTaskDelay(100);
+    vTaskDelay(100); // Delays task for required length of time until it is needed to be executed again
   }
 }
 
+
+// Task 7
 void Task7(void *pvParameters)  // This is a task.
 {
   (void) pvParameters;
@@ -359,7 +369,7 @@ void Task7(void *pvParameters)  // This is a task.
 
   for (;;)
   {
-    xSemaphoreTake(AnalogueSem, 5);
+    xSemaphoreTake(AnalogueSem, 5); //Reads average analogue input from global variable using a semaphore to protect it
     AverageAnaInput7 = PrintedStuff.AverageAnalogueInputGlobal;
     xSemaphoreGive(AnalogueSem);
     if (AverageAnaInput7 > half_of_maximum_range_for_analogue_input) {
@@ -367,14 +377,16 @@ void Task7(void *pvParameters)  // This is a task.
     } else {
       error_code = 0;
     }
-    if (xQueueSend(ErrorCodeQueue, &error_code, 20) != pdTRUE) {
+    if (xQueueSend(ErrorCodeQueue, &error_code, 20) != pdTRUE) { // Sends the error code to the error code queue, sends to task 8.
       Serial.print("Queue 7 Full");
     }
     //Serial.println(uxTaskGetStackHighWaterMark(NULL)); //Used to test HSW
-    vTaskDelay(333);
+    vTaskDelay(333); // Delays task for required length of time until it is needed to be executed again
   }
 }
 
+
+// Task 8
 void Task8(void *pvParameters)  // This is a task.
 {
   (void) pvParameters;
@@ -389,11 +401,13 @@ void Task8(void *pvParameters)  // This is a task.
         digitalWrite(RedLED, LOW);
       }
       //Serial.println(uxTaskGetStackHighWaterMark(NULL)); //Used to test HSW
-      vTaskDelay(333);
+      vTaskDelay(333); // Delays task for required length of time until it is needed to be executed again
     }
   }
 }
 
+
+// Task 9
 void Task9(void *pvParameters)  // This is a task.
 {
   (void) pvParameters;
@@ -401,6 +415,7 @@ void Task9(void *pvParameters)  // This is a task.
 
   for (;;)
   {
+    // Uses all the semaphores to read the global variables.
     xSemaphoreTake(ButtonSem, 5);
     ButtonStatePrint = PrintedStuff.ButtonStateGlobal;
     xSemaphoreGive(ButtonSem);
@@ -410,13 +425,13 @@ void Task9(void *pvParameters)  // This is a task.
     xSemaphoreTake(AnalogueSem, 5);
     AverageAnaInputPrint = PrintedStuff.AverageAnalogueInputGlobal;
     xSemaphoreGive(AnalogueSem);
-    if (ButtonStatePrint == 1) {
+    if (ButtonStatePrint == 1) { // Prints variables iff button is pressed
       Serial.printf( "Button State is %d, ", ButtonStatePrint);
       Serial.printf( "Frequency is %d, ", FrequencyPrint);
       Serial.printf( "Average Analogue input is %d. \n", AverageAnaInputPrint);
     }
     //Serial.println(uxTaskGetStackHighWaterMark(NULL)); //Used to test HSW
-    vTaskDelay(Task9Freq);
+    vTaskDelay(Task9Freq); // Delays task for required length of time until it is needed to be executed again
 
   }
 }
