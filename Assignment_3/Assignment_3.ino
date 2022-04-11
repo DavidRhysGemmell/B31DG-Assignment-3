@@ -85,9 +85,9 @@ SemaphoreHandle_t AnalogueSem = xSemaphoreCreateBinary(); // Create Filtered ana
 
 
 //CHANGE FREQUENCYS
-TickType_t Task1Freq = 34; //Changes the frequencies of each task. Do 1000/HZ to calculate this.
-TickType_t Task2Freq = 200;
-TickType_t Task9Freq = 5000;
+TickType_t Task1Freq = 20; //Changes the frequencies of each task. Do 1000/HZ to calculate this.
+TickType_t Task2Freq = 100;
+TickType_t Task9Freq = 1000;
 
 
 //Defines 9 tasks.
@@ -142,7 +142,7 @@ void setup() {
   xTaskCreatePinnedToCore(
     Task3
     ,  "Task3"   // A name just for humans
-    ,  530  // This stack size can be checked & adjusted by reading the Stack Highwater
+    ,  560  // This stack size can be checked & adjusted by reading the Stack Highwater
     ,  NULL
     ,  3  // Priority, with 3 (configMAX_PRIORITIES - 1) being the highest, and 0 being the lowest.
     ,  NULL
@@ -155,7 +155,7 @@ void setup() {
   xTaskCreatePinnedToCore(
     Task4
     ,  "Task4"   // A name just for humans
-    ,  570  // 560 HSW
+    ,  600  // 560 HSW
     ,  NULL
     ,  2  // Priority, with 3 (configMAX_PRIORITIES - 1) being the highest, and 0 being the lowest.
     ,  NULL
@@ -166,7 +166,7 @@ void setup() {
   xTaskCreatePinnedToCore(
     Task5
     ,  "Task5"   // A name just for humans
-    ,  510  // This stack size can be checked & adjusted by reading the Stack Highwater
+    ,  530  // This stack size can be checked & adjusted by reading the Stack Highwater
     ,  NULL
     ,  2  // Priority, with 3 (configMAX_PRIORITIES - 1) being the highest, and 0 being the lowest.
     ,  NULL
