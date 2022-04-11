@@ -306,10 +306,12 @@ void Task4(void *pvParameters)  // This is a task.
 
   for (;;)
   {
+    digitalWrite(Task4OutputPin, HIGH); //As required to view task 4 execetion time
     AnalogueRead = analogRead(AnalogueInput); // Reads analogue input
     if (xQueueSend(AnalogueQueue, &AnalogueRead, 20) != pdTRUE) { //Sends analogue input to analogue queue
       Serial.println("Queue 4 full"); // If queue is full this is posted to serial monitor
     }
+    digitalWrite(Task4OutputPin, LOW);
     //Serial.println(uxTaskGetStackHighWaterMark(NULL)); //Used to test HSW
     vTaskDelay(41); // Delays task for required length of time until it is needed to be executed again
   }
