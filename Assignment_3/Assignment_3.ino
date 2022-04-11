@@ -85,7 +85,7 @@ SemaphoreHandle_t AnalogueSem = xSemaphoreCreateBinary(); // Create Filtered ana
 
 
 //CHANGE FREQUENCYS
-TickType_t Task1Freq = 34; //Work this out
+TickType_t Task1Freq = 34; //Changes the frequencies of each task. Do 1000/HZ to calculate this.
 TickType_t Task2Freq = 200;
 TickType_t Task9Freq = 5000;
 
