@@ -126,6 +126,7 @@ void setup() {
 
   //Task2 Setup//
   pinMode(Button, INPUT);
+  pinMode(Task2OutputPin, OUTPUT);
   xTaskCreatePinnedToCore(
     Task2
     ,  "Task2"   // A name just for humans
@@ -150,7 +151,7 @@ void setup() {
 
   //Task4 Setup//
   pinMode(AnalogueInput, INPUT);
-  pinMode(Task2OutputPin, OUTPUT);
+  
   xTaskCreatePinnedToCore(
     Task4
     ,  "Task4"   // A name just for humans
