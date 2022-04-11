@@ -34,7 +34,7 @@ int LastSquarewaveState = 0;
 //Task4//
 #define AnalogueInput 32 //pin number
 int AnalogueRead = 0;
-#define Task4OutputPin 18
+#define Task2OutputPin 18
 ////////
 
 //Task5//
@@ -150,7 +150,7 @@ void setup() {
 
   //Task4 Setup//
   pinMode(AnalogueInput, INPUT);
-  pinMode(Task4OutputPin, OUTPUT);
+  pinMode(Task2OutputPin, OUTPUT);
   xTaskCreatePinnedToCore(
     Task4
     ,  "Task4"   // A name just for humans
@@ -249,11 +249,13 @@ void Task2(void *pvParameters)  // This is a task.
 
   for (;;)
   {
-
+    
+    digitalWrite(Task2OutputPin, HIGH); //As required to view task 2 execetion time
     ButtonState = digitalRead(Button); //Tells when Button is pressed
     xSemaphoreTake(ButtonSem, 5);
     PrintedStuff.ButtonStateGlobal = ButtonState;
     xSemaphoreGive(ButtonSem);
+    digitalWrite(Task2OutputPin, LOW); //As required to view task 2 execetion time
     //Serial.println(uxTaskGetStackHighWaterMark(NULL));
     vTaskDelay(Task2Freq); // Delays task for required length of time until it is needed to be executed again
   }
@@ -306,12 +308,12 @@ void Task4(void *pvParameters)  // This is a task.
 
   for (;;)
   {
-    digitalWrite(Task4OutputPin, HIGH); //As required to view task 4 execetion time
+    
     AnalogueRead = analogRead(AnalogueInput); // Reads analogue input
     if (xQueueSend(AnalogueQueue, &AnalogueRead, 20) != pdTRUE) { //Sends analogue input to analogue queue
       Serial.println("Queue 4 full"); // If queue is full this is posted to serial monitor
     }
-    digitalWrite(Task4OutputPin, LOW);
+    digitalWrite(Task2OutputPin, LOW);
     //Serial.println(uxTaskGetStackHighWaterMark(NULL)); //Used to test HSW
     vTaskDelay(41); // Delays task for required length of time until it is needed to be executed again
   }
